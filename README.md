@@ -1,1 +1,1 @@
-# UXI BambuPAY
+# UXI BambuPAY Terminal Management System (TMS)
