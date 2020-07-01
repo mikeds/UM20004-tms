@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Home extends Global_Controller {
+class Home extends Admin_Controller {
 
 	public function after_init() {}
 
