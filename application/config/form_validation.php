@@ -25,7 +25,7 @@ switch( strtolower(get_controller()) ) {
 				array( 	
 					'field' => 'username',
 					'label' => 'Username',
-					'rules'	=> $required_rules
+					'rules'	=> 'trim|required|xss_clean'
 				),
 				array( 	
 					'field' => 'password',
