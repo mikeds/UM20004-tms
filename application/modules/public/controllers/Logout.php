@@ -7,7 +7,9 @@ class Logout extends Global_Controller {
 	}
 
 	public function index(){
-		
+		$this->session->unset_userdata('member_session');
+		$this->session->sess_destroy();
+		redirect(base_url() . "login");
 	}
 }
 
