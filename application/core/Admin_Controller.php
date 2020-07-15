@@ -22,8 +22,52 @@ class Admin_Controller extends Global_Controller {
 	public function __construct() {
 		// Initialize all configs, helpers, libraries from parent
 		parent::__construct();
+		date_default_timezone_set("Asia/Manila");
+		$this->_today = date("Y-m-d H:i:s");
+
 		$this->validate_login();
+		$this->after_init();
 		$this->setup_nav_sidebar_menu();
+	}
+
+	public function get_user() {
+		$this->load->model('admin/merchants_model', 'merchants');
+		$this->load->model('admin/wallets_model', 'wallets');
+
+		$session = $this->session->userdata("{$this->_base_session}");
+		if (empty($session)) {
+			redirect(base_url() . "logout");
+		}
+
+		$merchant_id = isset($session['merchant_id']) ? $session['merchant_id'] : "";
+		$datum_merchant = $this->merchants->get_datum(
+			'',
+			array(
+				'merchant_id' => $merchant_id
+			)
+		)->row();
+
+		if ($datum_merchant == "") {
+			redirect(base_url() . "logout");
+		}
+
+		$bridge_id = $datum_merchant->oauth_client_bridge_id;
+
+		$datum_wallet = $this->wallets->get_datum(
+			'',
+			array(
+				'oauth_client_bridge_id' => $bridge_id
+			)
+		)->row();
+
+		if ($datum_wallet == "") {
+			redirect(base_url() . "logout");
+		}
+
+		return array(
+			'merchant_row' => $datum_merchant,
+			'wallet_row' => $datum_wallet
+		);
 	}
 
 	public function validate_login() {
@@ -64,93 +108,34 @@ class Admin_Controller extends Global_Controller {
 		);
 
 		$menu_items[] = array(
-			'menu_id'			=> 'dictionaries',
-			'menu_title'		=> 'Dictionaries',
-			'menu_url'			=> 	base_url() . "dictionaries",
-			'menu_controller'	=> 'dictionaries',
+			'menu_id'			=> 'transactions',
+			'menu_title'		=> 'Transactions',
+			// 'menu_url'			=> 	base_url() . "transactions",
+			'menu_controller'	=> 'transactions',
 			'menu_icon'			=> 'view-dashboard',
+			'menu_sub_items'	=> array(
+				array(
+					'menu_title'		=> 'Cash In',
+					'menu_url'			=> 	base_url() . "transactions/cash-in",
+					'menu_controller'	=> 'transactions',
+				),
+				array(
+					'menu_title'		=> 'Cash Out',
+					'menu_url'			=> 	base_url() . "transactions/cash-out",
+					'menu_controller'	=> 'transactions',
+				)
+			)
 		);
 
 		$menu_items[] = array(
-			'menu_id'			=> 'places',
-			'menu_title'		=> 'Places',
-			'menu_url'			=> 	base_url() . "places",
-			'menu_controller'	=> 'places',
-			'menu_icon'			=> 'view-dashboard',
-		);
-
-		$menu_items[] = array(
-			'menu_id'			=> 'user-management',
-			'menu_title'		=> 'User Management',
-			'menu_url'			=> 	base_url() . "user-management",
-			'menu_controller'	=> 'user_management',
+			'menu_id'			=> 'profile',
+			'menu_title'		=> 'Profile',
+			'menu_url'			=> 	base_url() . "profile",
+			'menu_controller'	=> 'profile',
 			'menu_icon'			=> 'view-dashboard',
 		);
 
 		$this->_data['nav_sidebar_menu'] = $this->generate_sidebar_items($menu_items);
-	}
-
-	private function generate_sidebar_items($menu_items) {
-		$controller = get_controller();
-		$controller = strtolower($controller);
-
-		$sidebar_items 	= "";
-
-		if (count($menu_items) != 0) {
-			foreach ($menu_items as $key => $item) {
-				$status	= "";
-
-				if ($controller == $item['menu_controller']) {
-					$status = "active";
-				}
-
-				$attributes['item'] 	= $item;
-				$attributes['status'] 	= $status;
-
-				if (isset($item['menu_sub_items'])) {
-					$attributes['sub_menu']	= $this->generate_sidebar_sub_menu($item);
-					
-					$sidebar_items .= $this->load->view("templates/sidebar/sidebar-item-with-sub-menu", $attributes, true);
-				} else {
-					$sidebar_items .= $this->load->view("templates/sidebar/sidebar-item", $attributes, true);
-				}
-			}
-		}
-		
-		return $sidebar_items;
-	}
-
-	private function generate_sidebar_sub_menu($main_item) {
-		$menu_id 	= $main_item['menu_id'];
-		$menu_items = $main_item['menu_sub_items'];
-
-		$controller = get_controller();
-		$controller = strtolower($controller);
-
-		$menu = "";
-		$sub_items = "";
-
-		if (count($menu_items) != 0) {
-			foreach ($menu_items as $key => $item) {
-				$status	= "";
-
-				if ($controller == $item['menu_controller']) {
-					$status = "active";
-				}
-
-				$attributes['item'] 	= $item;
-				$attributes['status'] 	= $status;
-
-				$sub_items .= $this->load->view("templates/sidebar/sidebar-sub-menu-item", $attributes, true);
-			}
-
-			$menu_attributes['items'] 	= $sub_items;
-			$menu_attributes['menu_id'] = $menu_id;
-
-			$menu = $this->load->view("templates/sidebar/sidebar-sub-menu", $menu_attributes, true);
-		}
-
-		return $menu;
 	}
 
 	public function set_scripts_and_styles() {
