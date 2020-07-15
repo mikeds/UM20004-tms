@@ -14,7 +14,9 @@ class Admin_Controller extends Global_Controller {
 	protected
 		$_base_controller = "admin",
 		$_base_session = "session",
-		$_data = array(); // shared data with child controller
+		$_data = array(), // shared data with child controller
+		$_user_data = NULL,
+		$_limit = 20;
 
 	/**
 	 * Constructor
@@ -26,8 +28,14 @@ class Admin_Controller extends Global_Controller {
 		$this->_today = date("Y-m-d H:i:s");
 
 		$this->validate_login();
-		$this->after_init();
+		$this->set_user_data();
 		$this->setup_nav_sidebar_menu();
+		$this->after_init();
+	}
+
+	private function set_user_data() {
+		$this->_user_data = $this->get_user();
+		is_null($this->_user_data) ? redirect(base_url() . "logout") : "";
 	}
 
 	public function get_user() {

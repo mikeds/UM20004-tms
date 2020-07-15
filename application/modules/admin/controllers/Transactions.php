@@ -2,20 +2,9 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Transactions extends Admin_Controller {
-	private
-		$_limit = 20,
-		$_user_data = NULL;
-
 	public function after_init() {
 		$this->set_scripts_and_styles();
-		$this->set_user_data();
-		$this->load->model('admin/merchants_model', 'merchants');
 		$this->load->model('admin/transactions_model', 'transactions');
-	}
-
-	private function set_user_data() {
-		$this->_user_data = $this->get_user();
-		is_null($this->_user_data) ? redirect(base_url() . "logout") : "";
 	}
 
 	public function cash_in($page = 1) {
