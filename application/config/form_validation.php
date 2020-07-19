@@ -36,6 +36,28 @@ switch( strtolower(get_controller()) ) {
 		);
 	break;
 
+	case 'marketplace' : 
+		$config = array(
+			'product_new' => array(
+				array( 	
+					'field' => 'category',
+					'label' => 'Category',
+					'rules'	=> 'trim|required|xss_clean|numeric'
+				),
+				array( 	
+					'field' => 'product-name',
+					'label' => 'Product Name',
+					'rules'	=> 'trim|required|xss_clean'
+				),
+				array( 	
+					'field' => 'product-description',
+					'label' => 'Product Description',
+					'rules'	=> 'trim|required|xss_clean'
+				)
+			),
+		);
+	break;
+
 	default : $config = array();
 }
 

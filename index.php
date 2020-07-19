@@ -69,6 +69,12 @@
  * NOTE: If you change these, also change the error_reporting() code below
  */
 
+# CONSTANT SIZE
+define('KB', 1024);
+define('MB', 1048576);
+define('GB', 1073741824);
+define('TB', 1099511627776);
+
 # ENVIRONMENT VAR
 define('APPNAME', getenv("APPNAME"));
 
@@ -107,6 +113,8 @@ $database_password = ENVIRONMENT == "production" ? getenv("DBPRODPWD") :
 ));
 define('DB_PWD', $database_password);
 
+$upload_path = ENVIRONMENT == "local" ? getenv("UPLOADPATHLOCAL") : getenv("UPLOADPATHPROD");
+define('UPLOAD_PATH', $upload_path);
 /*
  *---------------------------------------------------------------
  * ERROR REPORTING

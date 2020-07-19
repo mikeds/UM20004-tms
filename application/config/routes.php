@@ -52,13 +52,24 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $route["default_controller"]    = "admin/Dashboard";
 
-$route["transactions/cash-in"]  = "admin/Transactions/cash_in";
-$route["transactions/cash-out"] = "admin/Transactions/cash_out";
+$route["transactions/cash-in"]          = "admin/Transactions/cash_in";
+$route["transactions/cash-in/(:num)"]   = "admin/Transactions/cash_in/$1";
+
+$route["transactions/cash-out"]         = "admin/Transactions/cash_out";
+$route["transactions/cash-out/(:num)"]  = "admin/Transactions/cash_out/$1";
+
+$route["marketplace/products"]          = "admin/Marketplace/products";
+$route["marketplace/products/(:num)"]   = "admin/Marketplace/products/$1";
+
+$route["marketplace/products/new"]                  = "admin/Marketplace/product_new";
+$route["marketplace/products/update/(:num)"]        = "admin/Marketplace/product_update/$1";
+
+$route["marketplace/products/confirmation-remove/image-(:any)"] = "admin/Marketplace/confirmation_remove_product_image/$1";
 
 $route["login"]                 = "public/Login";
 $route["logout"]                = "public/Logout";
 
-$route['404_override'] = 'admin/Error_404';
+$route['404_override'] = 'public/Error_404';
 $route['translate_uri_dashes'] = FALSE;
 
 

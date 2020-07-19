@@ -11,6 +11,9 @@ class Global_Controller extends MX_Controller {
 		$_stylesheets = array(),
 		$_scripts = array();
 
+	protected
+		$_upload_path = FCPATH . UPLOAD_PATH;
+
 	public function __construct() {
 		// Initialize all configs, helpers, libraries from parent
 		parent::__construct();
@@ -27,6 +30,36 @@ class Global_Controller extends MX_Controller {
 
 	// To override on child class
 	private function after_init() {}
+
+	/**
+	 * Returns generated selection
+	 *
+	 */
+	public function generate_selection($name, $data, $id_selected, $id_key = "id", $name_key = "name", $has_preselected = false, $default_placeholder = "Please select") {
+		$first = '<select id="'. $name .'" name="'. $name .'"  class="form-control">';
+		$body = '<option value="">' . $default_placeholder . '</option>';
+		if ($has_preselected) { $body = ''; }
+			foreach ($data as $key => $value) {
+				if (contains_array($value)) {
+					$arr_key = key($value);
+					$body .= "<optgroup label='{$arr_key}'>";
+					if (isset($value[$arr_key])) {
+						$rows = $value[$arr_key];
+						foreach ($rows as $index => $row) {
+							$body .= '<option value="'. $row[$id_key] .'" '. ($id_selected == $row[$id_key] ? 'selected' : '') .'>'. $row[$name_key] .'</option>';
+						}
+					}
+					
+					$body .= "</optgroun>";
+				} else {
+					$body .= '<option value="'. $value[$id_key] .'" '. ($id_selected == $value[$id_key] ? 'selected' : '') .'>'. $value[$name_key] .'</option>';
+				}
+			}
+
+      	$last = '</select>';
+
+      	return $first . $body . $last;
+	}
 
 	/**
 	 * Returns generated notification UI
@@ -196,7 +229,7 @@ class Global_Controller extends MX_Controller {
 		return $offset;
 	}
 
-	function table_listing( $user_type = '' , $result = array(), $total_rows = 0, $page = 0, $limit = 10, $actions = array(), $uri_segment = 3, $prev_next_only = FALSE, $has_page_count = false, $prefix_id = '', $extra_url ='', $custom_url = '') {
+	function table_listing( $user_type = '' , $result = array(), $total_rows = 0, $page = 0, $limit = 10, $actions = array(), $uri_segment = 3, $prev_next_only = false, $has_page_count = false, $prefix_id = '', $extra_url ='', $custom_url = '') {
 
 		$this->load->library('table');
 		$this->load->library('pagination');
@@ -358,6 +391,8 @@ class Global_Controller extends MX_Controller {
 							$links .= "<div class='col-lg-{$col_size}'><div class='form-group'><a href='". ($custom_url != "" ? $custom_url : $url)  . 'add/'.$id."' class='btn btn-block btn-success' title='Delete' role='button'><span class='fa fa-clock-o'></span></a></div></div>";
 						} else if($action == 'timesheet'){
 							$links .= "<div class='col-lg-{$col_size}'><div class='form-group'><a href='". ($custom_url != "" ? $custom_url : $url)  . 'view/'.$id."' class='btn btn-block btn-primary' title='View' role='button'><span class='fa fa-table'></span></a></div></div>";
+						} else if($action == 'update'){
+							$links .= "<div class='col-lg-{$col_size}'><div class='form-group'><a href='". ($custom_url != "" ? $custom_url : $url)  . 'update/'.$id."' class='btn btn-block btn-success btn-primary' title='Update' role='button'><span class='mdi mdi-table-edit'></span></a></div></div>";
 						}
 					}
 

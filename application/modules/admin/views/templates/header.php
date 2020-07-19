@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title><?=(isset($title) ? $title : "BMTG")?></title>
+    <title><?=(isset($title) ? $title : APPNAME)?></title>
     <!-- Required meta tags -->
     <link rel="icon" type="image/png" href="<?=base_url() . 'assets/favicon.ico'?>" />
     <meta charset="utf-8">
