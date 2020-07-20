@@ -69,31 +69,52 @@
  * NOTE: If you change these, also change the error_reporting() code below
  */
 
+# CONSTANT SIZE
+define('KB', 1024);
+define('MB', 1048576);
+define('GB', 1073741824);
+define('TB', 1099511627776);
+
 # ENVIRONMENT VAR
 define('APPNAME', getenv("APPNAME"));
 
 define('LOCAL_URL', 'tms.bambupay.local');
 define('DEV_URL', 'dev-tms.resolveitthrough.us');
+define('STAG_URL', 'staging-tms.resolveitthrough.us');
 define('PROD_URL', 'tms.resolveitthrough.us');
 
-$localhost_url 	= LOCAL_URL;
-$environment_state = (preg_match("/\b{$localhost_url}\b/", $_SERVER['HTTP_HOST']) ? 'development' : 'production');
+$localhost_url = LOCAL_URL;
+$environment_state = (preg_match("/\b{$localhost_url}\b/", $_SERVER['HTTP_HOST']) ? 'local' : 'production');
 
-$testing_url	= DEV_URL;
-$environment_state = (preg_match("/\b{$testing_url}\b/", $_SERVER['HTTP_HOST']) ? 'testing' : $environment_state);
+$development_url = DEV_URL;
+$environment_state = (preg_match("/\b{$development_url}\b/", $_SERVER['HTTP_HOST']) ? 'development' : $environment_state);
+
+$staging_url = STAG_URL;
+$environment_state = (preg_match("/\b{$staging_url}\b/", $_SERVER['HTTP_HOST']) ? 'staging' : $environment_state);
 
 define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : $environment_state);
 
 # DATABASE GLOBAL VARIABLE
-$database = ENVIRONMENT == "production" ? getenv("DBPROD") : (ENVIRONMENT == "testing" ? getenv("DBDEV") : getenv("DBLOCAL"));
+$database = ENVIRONMENT == "production" ? getenv("DBPROD") : 
+(ENVIRONMENT == "staging" ? getenv("DBSTAG") : 
+(ENVIRONMENT == "development" ? getenv("DBDEV") :  getenv("DBLOCAL")
+));
 define('DB_NAME', $database);
 
-$database_username = ENVIRONMENT == "production" ? getenv("DBPRODUSR") : (ENVIRONMENT == "testing" ? getenv("DBDEVUSR") : getenv("DBLOCALUSR"));
+$database_username = ENVIRONMENT == "production" ? getenv("DBPRODUSR") : 
+(ENVIRONMENT == "staging" ? getenv("DBSTAGUSR") : 
+(ENVIRONMENT == "development" ? getenv("DBDEVUSR") :  getenv("DBLOCALUSR")
+));
 define('DB_USERNAME', $database_username);
 
-$database_password = ENVIRONMENT == "production" ? getenv("DBPRODPWD") : (ENVIRONMENT == "testing" ? getenv("DBDEVPWD") : getenv("DBLOCALPWD"));
+$database_password = ENVIRONMENT == "production" ? getenv("DBPRODPWD") : 
+(ENVIRONMENT == "staging" ? getenv("DBSTAGPWD") : 
+(ENVIRONMENT == "development" ? getenv("DBDEVPWD") :  getenv("DBLOCALPWD")
+));
 define('DB_PWD', $database_password);
 
+$upload_path = ENVIRONMENT == "local" ? getenv("UPLOADPATHLOCAL") : getenv("UPLOADPATHPROD");
+define('UPLOAD_PATH', $upload_path);
 /*
  *---------------------------------------------------------------
  * ERROR REPORTING
@@ -104,12 +125,17 @@ define('DB_PWD', $database_password);
  */
 switch (ENVIRONMENT)
 {
+	case 'local':
+		error_reporting(-1);
+		ini_set('display_errors', 1);
+	break;
+
 	case 'development':
 		error_reporting(-1);
 		ini_set('display_errors', 1);
 	break;
 
-	case 'testing':
+	case 'staging':
 	case 'production':
 		ini_set('display_errors', 0);
 		if (version_compare(PHP_VERSION, '5.3', '>='))
