@@ -33,6 +33,70 @@ class Admin_Controller extends Global_Controller {
 		$this->after_init();
 	}
 
+	public function get_wallet_info($wallet_address) {
+		$this->load->model('admin/wallets_model', 'wallets');
+		$this->load->model('admin/merchants_model', 'merchants');
+		$this->load->model('admin/clients_model', 'clients');
+
+		$wallet_row = $this->wallets->get_datum(
+			'',
+			array(
+				'wallet_address' => $wallet_address
+			)
+		)->row();
+
+		if ($wallet_address == "") {
+			return false;
+		}
+
+		$bridge_id = $wallet_row->oauth_client_bridge_id;
+
+		// 1: check on tmsadmin
+		// 2: check on merchant
+		// 3: check on client
+
+		$merchant_row = $this->merchants->get_datum(
+			'',
+			array(
+				'oauth_client_bridge_id' => $bridge_id
+			)
+		)->row();
+
+		if ($merchant_row != "") {
+			$name = trim("{$merchant_row->merchant_fname} {$merchant_row->merchant_mname} {$merchant_row->merchant_lname}");
+			$email_address = $merchant_row->merchant_email_address;
+			$mobile_no = "{$merchant_row->merchant_mobile_country_code}{$merchant_row->merchant_mobile_no}";
+
+			return array(
+				'name' 			=> $name,
+				'email_address' => $email_address,
+				'mobile_no' 	=> $mobile_no,
+			);
+		}
+
+		$client_row = $this->clients->get_datum(
+			'',
+			array(
+				'oauth_client_bridge_id' => $bridge_id
+			)
+		)->row();
+
+		if ($client_row != "") {
+			$name = trim("{$client_row->client_fname} {$client_row->client_mname} {$client_row->client_lname}");
+			$email_address = $client_row->client_email_address;
+			$mobile_no = "{$client_row->client_mobile_country_code}{$client_row->client_mobile_no}";
+
+			return array(
+				'name' 			=> $name,
+				'email_address' => $email_address,
+				'mobile_no' 	=> $mobile_no,
+			);
+		}
+
+		// default return
+		return false;
+	}
+
 	public function generate_image_gallery($images_data) {
 		$content = "";
 		
