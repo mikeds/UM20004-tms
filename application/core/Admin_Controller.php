@@ -302,13 +302,13 @@ HTML;
 			)
 		);
 
-		$menu_items[] = array(
-			'menu_id'			=> 'profile',
-			'menu_title'		=> 'Profile',
-			'menu_url'			=> 	base_url() . "profile",
-			'menu_controller'	=> 'profile',
-			'menu_icon'			=> 'view-dashboard',
-		);
+		// $menu_items[] = array(
+		// 	'menu_id'			=> 'profile',
+		// 	'menu_title'		=> 'Profile',
+		// 	'menu_url'			=> 	base_url() . "profile",
+		// 	'menu_controller'	=> 'profile',
+		// 	'menu_icon'			=> 'view-dashboard',
+		// );
 
 		$this->_data['nav_sidebar_menu'] = $this->generate_sidebar_items($menu_items);
 	}
