@@ -91,10 +91,15 @@ class Transactions extends Admin_Controller {
 				$request_info = "{$wallet_info['name']}<br>{$wallet_info['email_address']}<br>{$wallet_info['mobile_no']}";
 			}
 
+			$transaction_number = $datum["Transaction Number"];
+			$image_url =  base_url() . "transactions/qr-code/" . $transaction_number;
+			$qr_code_image = "<img src='{$image_url}' class='img-thumbnail'>";
+
 			$new_datum = array(
 				"id" => $datum["id"],
+				'QR Code' => $qr_code_image, 
 				"Transaction Status" => $datum["Transaction Status"],
-				"Transaction Number" => $datum["Transaction Number"],
+				"Transaction Number" => $transaction_number,
 				"Requested by" => $request_info,
 				"Amount" => $datum["Amount"],
 				"Fees" => $datum["Fees"],

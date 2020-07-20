@@ -52,6 +52,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $route["default_controller"]    = "admin/Dashboard";
 
+$route["transactions/qr-code/(:any)"] = "admin/Qr_code/index/$1";
+
 $route["transactions/cash-in"]          = "admin/Transactions/cash_in";
 $route["transactions/cash-in/(:num)"]   = "admin/Transactions/cash_in/$1";
 
