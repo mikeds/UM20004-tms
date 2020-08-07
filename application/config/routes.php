@@ -71,6 +71,8 @@ $route["marketplace/products/confirmation-remove/image-(:any)"] = "admin/Marketp
 $route["login"]                 = "public/Login";
 $route["logout"]                = "public/Logout";
 
+$route["send-mail-test"]       = "public/Send_mail";
+
 $route['404_override'] = 'public/Error_404';
 $route['translate_uri_dashes'] = FALSE;
 
