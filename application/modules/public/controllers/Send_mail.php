@@ -1,5 +1,4 @@
-<?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+<?php defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Send_mail extends Global_Controller {
 	public function after_init() {
@@ -11,7 +10,7 @@ class Send_mail extends Global_Controller {
 
         $config = Array(
             'protocol' => 'smtp',
-            'smtp_host' => 'ssl://smtp.googlemail.com',
+            'smtp_host' => 'smtp.gmail.com',
             'smtp_port' => 465,
             'smtp_user' => getenv("SMTPUSERTEST"), // change it to yours
             'smtp_pass' => getenv("SMTPPASSTEST"), // change it to yours
@@ -35,7 +34,7 @@ class Send_mail extends Global_Controller {
         if($this->email->send()) {
 			echo "Email sent!";
 		} else {
-            show_error($this->email->print_debugger());
+            echo $this->email->print_debugger();
         }
 	}
 }
