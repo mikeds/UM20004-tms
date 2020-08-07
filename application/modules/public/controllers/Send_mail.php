@@ -9,13 +9,15 @@ class Send_mail extends Global_Controller {
         $this->load->library('email');
 
         $config = Array(
-            'protocol' => 'smtp',
-            'smtp_host' => 'smtp.gmail.com',
+            'protocol' => 'ssmtp',
+            'smtp_host' => 'ssl://ssmtp.googlemail.com',
             'smtp_port' => 465,
+            'smtp_crypto' => 'security',
             'smtp_user' => getenv("SMTPUSERTEST"), // change it to yours
             'smtp_pass' => getenv("SMTPPASSTEST"), // change it to yours
             'mailtype'  => 'html', 
-            'charset'   => 'iso-8859-1'
+            'charset'   => 'iso-8859-1',
+            'wordwrap' => TRUE
         );
     
         $this->email->initialize($config);
