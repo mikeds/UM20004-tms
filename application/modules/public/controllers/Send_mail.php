@@ -28,9 +28,15 @@ class Send_mail extends Global_Controller {
         $htmlContent .= '<p>This email has sent via Gmail SMTP server from CodeIgniter application.</p>';
         
         $this->email->to('marknel.pineda23@gmail.com');
-        $this->email->from('ibms2k18@gmail.com', 'TEST MAIL');
+        $this->email->from(getenv("SMTPUSERTEST"), 'TEST MAIL');
         $this->email->subject('How to send email via Gmail SMTP server in CodeIgniter');
         $this->email->message($htmlContent);
+
+        if($this->email->send()) {
+			echo "Email sent!";
+		} else {
+            show_error($this->email->print_debugger());
+        }
 	}
 }
 
