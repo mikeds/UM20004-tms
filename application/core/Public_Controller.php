@@ -37,7 +37,7 @@ class Public_Controller extends Global_Controller {
 		$avatar = base_url() . "assets/images/user-default.png";
 
 		if (empty($avatar_base_64)) {
-			$avatar = "data:image/png;base64,{$row->member_avatar_base64}";
+			$avatar = "data:image/png;base64,{$avatar_base_64}";
 		}
 
 		return $avatar;
