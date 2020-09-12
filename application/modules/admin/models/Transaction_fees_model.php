@@ -1,19 +1,14 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Transactions_model extends CI_Model {
+class Transaction_fees_model extends CI_Model {
 	private 
-		$_table	= 'transactions  transactions',
-		$_table_x	= 'transactions';
+		$_table	= 'transaction_fees  transaction_fees',
+		$_table_x	= 'transaction_fees';
 
 	private
-		$_id = "transaction_id";
+		$_id = "transaction_fee_id";
 
-	function get_datum($id = '', $data = array(), $where_or = array(), $inner_joints = array(), $select = array()) {
-
-		if (!empty($select)) {
-			$this->db->select(ARRtoSTR($select), false);
-		}
-
+	function get_datum($id = '', $data = array(), $where_or = array(), $inner_joints = array()) {
 		$this->db->from($this->_table);
 		if (!empty($inner_joints)) {
 			foreach($inner_joints as $join) {

@@ -1,12 +1,12 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Product_categories_model extends CI_Model {
+class Oauth_clients_model extends CI_Model {
 	private 
-		$_table	= 'bambupay_product_categories  categories',
-		$_table_x	= 'bambupay_product_categories';
+		$_table	= 'oauth_clients  oauth_clients',
+		$_table_x	= 'oauth_clients';
 
 	private
-		$_id = "product_category_id";
+		$_id = "client_id";
 
 	function get_datum($id = '', $data = array(), $where_or = array()) {
 		$this->db->from( $this->_table_x );

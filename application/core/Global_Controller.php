@@ -12,7 +12,8 @@ class Global_Controller extends MX_Controller {
 		$_scripts = array();
 
 	protected
-		$_upload_path = FCPATH . UPLOAD_PATH;
+		$_upload_path = FCPATH . UPLOAD_PATH,
+		$_ssl_method = "AES-128-ECB";
 
 	public function __construct() {
 		// Initialize all configs, helpers, libraries from parent
@@ -386,7 +387,7 @@ class Global_Controller extends MX_Controller {
 						} else if($action == 'deactivate'){
 							$links .= "<div class='col-lg-{$col_size}'><div class='form-group'><a href='". ($custom_url != "" ? $custom_url : $url)  . 'reset/'.$id."' class='btn btn-block btn-success title='Reset Code' role='button'><span class='fa fa-lock'></span></a></div></div>";
 						} else if($action == 'delete'){
-							$links .= "<div class='col-lg-{$col_size}'><div class='form-group'><a href='". ($custom_url != "" ? $custom_url : $url)  . 'delete/'.$id."' class='btn btn-block btn-danger' title='Delete' role='button'><span class='fa fa-trash'></span></a></div></div>";
+							$links .= "<div class='col-lg-{$col_size}'><div class='form-group'><a href='". ($custom_url != "" ? $custom_url : $url)  . 'delete/'.$id."' class='btn btn-block btn-danger' title='Delete' role='button'>Delete</a></div></div>";
 						} else if($action == 'attendance'){
 							$links .= "<div class='col-lg-{$col_size}'><div class='form-group'><a href='". ($custom_url != "" ? $custom_url : $url)  . 'add/'.$id."' class='btn btn-block btn-success' title='Delete' role='button'><span class='fa fa-clock-o'></span></a></div></div>";
 						} else if($action == 'timesheet'){

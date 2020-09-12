@@ -15,8 +15,7 @@ class Admin_Controller extends Global_Controller {
 		$_base_controller = "admin",
 		$_base_session = "session",
 		$_data = array(), // shared data with child controller
-		$_user_data = NULL,
-		$_limit = 20;
+		$_limit = 50;
 
 	/**
 	 * Constructor
@@ -28,73 +27,526 @@ class Admin_Controller extends Global_Controller {
 		$this->_today = date("Y-m-d H:i:s");
 
 		$this->validate_login();
-		$this->set_user_data();
 		$this->setup_nav_sidebar_menu();
 		$this->after_init();
 	}
 
-	public function get_wallet_info($wallet_address) {
-		$this->load->model('admin/wallets_model', 'wallets');
-		$this->load->model('admin/merchants_model', 'merchants');
-		$this->load->model('admin/clients_model', 'clients');
+	public function new_ledger_datum($description = "", $transaction_id, $from_wallet_address, $to_wallet_address, $balances) {
+		$this->load->model("admin/ledger_data_model", "ledger");
+		$this->load->model("admin/wallet_addresses_model", "wallet_addresses");
 
-		$wallet_row = $this->wallets->get_datum(
+		$to_oauth_bridge_id 	= getenv("SYSADD");
+		$from_oauth_bridge_id 	= getenv("SYSADD");
+
+
+		$from_row = $this->wallet_addresses->get_datum(
+			'',
+			array(
+				'wallet_address' => $from_wallet_address
+			)
+		)->row();
+
+		if ($from_row != "") {
+			$from_oauth_bridge_id 	= $from_row->oauth_bridge_id;
+		}
+
+		$to_row = $this->wallet_addresses->get_datum(
+			'',
+			array(
+				'wallet_address' => $to_wallet_address
+			)
+		)->row();
+
+		if ($to_row != "") {
+			$to_oauth_bridge_id 	= $to_row->oauth_bridge_id;
+		}
+
+		$old_balance = $balances['old_balance'];
+		$new_balance = $balances['new_balance'];
+		$amount		 = $balances['amount'];
+
+		$ledger_type = 0; // unknown
+
+		if ($amount < 0) {
+			$ledger_type = 1; // debit
+		} else if ($amount >= 0) {
+			$ledger_type = 2; // credit
+		}
+
+		// add new ledger data
+		$ledger_data = array(
+			'tx_id'                         => $transaction_id,
+			'ledger_datum_type'				=> $ledger_type,
+			'ledger_datum_bridge_id'		=> $to_oauth_bridge_id,
+			'ledger_datum_desc'             => $description,
+			'ledger_from_wallet_address'    => $from_wallet_address,
+			'ledger_to_wallet_address'      => $to_wallet_address,
+			'ledger_from_oauth_bridge_id'   => $from_oauth_bridge_id,
+			'ledger_to_oauth_bridge_id'     => $to_oauth_bridge_id,
+			'ledger_datum_old_balance'      => $old_balance,
+			'ledger_datum_new_balance'      => $new_balance,
+			'ledger_datum_amount'           => $amount,
+			'ledger_datum_date_added'       => $this->_today
+		);
+
+		$ledger_datum_id = $this->generate_code(
+			$ledger_data,
+			"crc32"
+		);
+
+		$ledger_data = array_merge(
+			$ledger_data,
+			array(
+				'ledger_datum_id'   => $ledger_datum_id,
+			)
+		);
+
+		$ledger_datum_checking_data = $this->generate_code($ledger_data);
+
+		$this->ledger->insert(
+			array_merge(
+				$ledger_data,
+				array(
+					'ledger_datum_checking_data' => $ledger_datum_checking_data
+				)
+			)
+		);
+	}
+
+	public function update_wallet($wallet_address, $amount) {
+		$this->load->model("admin/wallet_addresses_model", "wallet_addresses");
+
+		$row = $this->wallet_addresses->get_datum(
+			'',
+			array(
+				'wallet_address'	=> $wallet_address
+			)
+		)->row();
+
+		if ($row == "") {
+			return false;
+		}
+
+		$wallet_balance         = $this->decrypt_wallet_balance($row->wallet_balance);
+
+		$old_balance            = $wallet_balance;
+		$encryted_old_balance   = $this->encrypt_wallet_balance($old_balance);
+
+		$new_balance            = $old_balance + $amount;
+		$encryted_new_balance   = $this->encrypt_wallet_balance($new_balance);
+
+		$wallet_data = array(
+			'wallet_balance'                => $encryted_new_balance,
+			'wallet_address_date_updated'   => $this->_today
+		);
+
+		// update wallet balances
+		$this->wallet_addresses->update(
+			$wallet_address,
+			$wallet_data
+		);
+
+		return array(
+			'old_balance'	=> $old_balance,
+			'new_balance'	=> $new_balance,
+			'amount'		=> $amount
+		);
+	}
+
+	public function decrypt_wallet_balance($encrypted_balance) {
+		return openssl_decrypt($encrypted_balance, $this->_ssl_method, getenv("BPKEY"));
+	}
+
+	public function filter_ledger($data) {
+		$results = array();
+
+		foreach ($data as $datum) {
+			$row = $this->get_oauth_account_info($datum['Requested By']);
+
+			$tmp_result = $datum;
+
+			if ($row) {
+				$tmp_result['Requested By'] = trim($row['account_fname'] . " ". $row['account_lname'] . " " . $row['account_lname']);
+			} else {
+				$tmp_result['Requested By'] = "SYSTEM";
+			}
+
+			$results[] = $tmp_result;
+		}
+
+		return $results;
+	}
+
+	public function get_oauth_account_info($oauth_bridge_id) {
+		$this->load->model("admin/accounts_model", "accounts");
+		$this->load->model("admin/tms_admin_accounts_model", "tms_admin_accounts");
+		$this->load->model("admin/merchant_accounts_model", "merchant_accounts");
+		$this->load->model("admin/client_accounts_model", "client_accounts");
+			
+		$where = array(
+			'oauth_bridge_id'	=> $oauth_bridge_id
+		);
+
+		$row_account = $this->accounts->get_datum(
+			'',
+			$where
+		)->row();
+
+		if ($row_account != "") {
+			return array(
+				'account_number'	=> $row_account->account_number,
+				'account_fname'		=> $row_account->account_fname,
+				'account_mname'		=> $row_account->account_mname,
+				'account_lname'		=> $row_account->account_lname, 
+			);
+		}
+
+		$row_admin = $this->tms_admin_accounts->get_datum(
+			'',
+			$where
+		)->row();
+
+		if ($row_admin != "") {
+			return array(
+				'account_number'	=> $row_admin->account_number,
+				'account_fname'		=> $row_admin->account_fname,
+				'account_mname'		=> $row_admin->account_mname,
+				'account_lname'		=> $row_admin->account_lname, 
+			);
+		}
+
+		$row_merchant = $this->merchant_accounts->get_datum(
+			'',
+			$where
+		)->row();
+
+		if ($row_merchant != "") {
+			return array(
+				'account_number'	=> $row_merchant->account_number,
+				'account_fname'		=> $row_merchant->account_fname,
+				'account_mname'		=> $row_merchant->account_mname,
+				'account_lname'		=> $row_merchant->account_lname, 
+			);
+		}
+
+		$row_client = $this->client_accounts->get_datum(
+			'',
+			$where
+		)->row();
+
+		if ($row_client != "") {
+			return array(
+				'account_number'	=> $row_client->account_number,
+				'account_fname'		=> $row_client->account_fname,
+				'account_mname'		=> $row_client->account_mname,
+				'account_lname'		=> $row_client->account_lname, 
+			);
+		}
+
+		return false;
+	}
+
+	public function get_account_data() {
+		$this->load->model('admin/merchant_accounts_model', 'accounts');
+		$this->load->model('admin/wallet_addresses_model', 'wallet_addresses');
+
+		$account = $this->session->userdata("{$this->_base_session}");
+
+		if (!isset($account['id'])) {
+			redirect(base_url() . "logout");
+		}
+
+		$id = $account['id'];
+
+		/*
+			- wallet address
+			- oauth bridge id
+			- secret id
+			- secret key
+		*/
+
+		$row = $this->accounts->get_datum(
+			'',
+			array(
+				'account_number' => $id
+			),
+			array(),
+			array(
+				array(
+					'table_name' 	=> 'oauth_bridges',
+					'condition'		=> 'oauth_bridges.oauth_bridge_id = merchant_accounts.oauth_bridge_id'
+				),
+				array(
+					'table_name' 	=> 'merchants',
+					'condition'		=> 'merchants.merchant_number = merchant_accounts.merchant_number'
+				)
+			),
+			array(
+				'*',
+				'merchants.oauth_bridge_id as merchant_oauth_bridge_id'
+			)
+		)->row();
+		
+		if ($row == "") {
+			return array(
+				'status' 	=> false,
+				'message' 	=> 'Cannot find account data!'
+			);
+		}
+
+		$oauth_bridge_id 			= $row->oauth_bridge_id;
+		$merchant_oauth_bridge_id	= $row->merchant_oauth_bridge_id;
+		$admin_oauth_bridge_id		= $row->oauth_bridge_parent_id;
+
+		$wallet_address = $this->get_wallet_address($merchant_oauth_bridge_id);
+
+		return array(
+			'status' => true,
+			'results' => array(
+				'wallet_address' 			=> $wallet_address,
+				'oauth_bridge_id'			=> $oauth_bridge_id,
+				'merchant_oauth_bridge_id'	=> $merchant_oauth_bridge_id,
+				'admin_oauth_bridge_id'		=> $admin_oauth_bridge_id,
+				'secret_id'					=> '',
+				'secret_key'				=> '',
+			)
+		);
+	}
+
+	public function get_wallet_address($bridge_id) {
+		$this->load->model('admin/wallet_addresses_model', 'wallet_addresses');
+
+		$row = $this->wallet_addresses->get_datum(
+			'',
+			array(
+				'oauth_bridge_id' => $bridge_id
+			)
+		)->row();
+
+		if ($row == "") {
+			return "";
+		}
+
+		return $row->wallet_address;
+	}
+
+	public function get_wallet_data($wallet_address) {
+		$row = $this->wallet_addresses->get_datum(
 			'',
 			array(
 				'wallet_address' => $wallet_address
 			)
 		)->row();
 
-		if ($wallet_address == "") {
-			return false;
-		}
-
-		$bridge_id = $wallet_row->oauth_client_bridge_id;
-
-		// 1: check on tmsadmin
-		// 2: check on merchant
-		// 3: check on client
-
-		$merchant_row = $this->merchants->get_datum(
-			'',
-			array(
-				'oauth_client_bridge_id' => $bridge_id
-			)
-		)->row();
-
-		if ($merchant_row != "") {
-			$name = trim("{$merchant_row->merchant_fname} {$merchant_row->merchant_mname} {$merchant_row->merchant_lname}");
-			$email_address = $merchant_row->merchant_email_address;
-			$mobile_no = "{$merchant_row->merchant_mobile_country_code}{$merchant_row->merchant_mobile_no}";
-
+		if ($row == "") {
 			return array(
-				'name' 			=> $name,
-				'email_address' => $email_address,
-				'mobile_no' 	=> $mobile_no,
+				'status' => false,
+				'message' => 'Cannot find wallet address'
 			);
 		}
 
-		$client_row = $this->clients->get_datum(
+		/*
+			- balance
+			- hold balance
+			- last updated
+		*/
+
+		$encrypted_balance 		= $row->wallet_balance;
+		$encrypted_hold_balance = $row->wallet_hold_balance;
+
+		$balance 		= openssl_decrypt($encrypted_balance, $this->_ssl_method, getenv("BPKEY"));
+		$hold_balance 	= openssl_decrypt($encrypted_hold_balance, $this->_ssl_method, getenv("BPKEY"));
+
+		return array(
+			'status' => true,
+			'results' => array(
+				'balance' 		=> $balance,
+				'hold_balance'	=> $hold_balance
+			)
+		);
+	}
+
+	public function encrypt_wallet_balance($balance) {
+		return openssl_encrypt($balance, $this->_ssl_method, getenv("BPKEY"));
+	}
+
+	public function generate_code($data, $hash = "sha256") {
+		$json = json_encode($data);
+		return hash_hmac($hash, $json, getenv("SYSKEY"));
+	}
+
+	public function create_wallet_address($account_number, $bridge_id, $oauth_bridge_parent_id) {
+		$this->load->model('admin/wallet_addresses_model', 'wallet_addresses');
+
+		// add address
+		$wallet_address = $this->generate_code(
+			array(
+				'account_number' 				=> $account_number,
+				'oauth_bridge_id'				=> $bridge_id,
+				'wallet_address_date_created'	=> $this->_today,
+				'admin_oauth_bridge_id'			=> $oauth_bridge_parent_id
+			)
+		); 
+
+		// create wallet address
+		$this->wallet_addresses->insert(
+			array(
+				'wallet_address' 				=> $wallet_address,
+				'wallet_balance'				=> openssl_encrypt(0, $this->_ssl_method, getenv("BPKEY")),
+				'wallet_hold_balance'			=> openssl_encrypt(0, $this->_ssl_method, getenv("BPKEY")),
+				'oauth_bridge_id'				=> $bridge_id,
+				'wallet_address_date_created'	=> $this->_today
+			)
+		);
+	}
+
+	public function create_token_auth($account_number, $bridge_id) {
+		$this->load->model('admin/oauth_clients_model', 'oauth_clients');
+
+		// create api token
+		$this->oauth_clients->insert(
+			array(
+				'client_id' 		=> $bridge_id,
+				'client_secret'		=> $this->generate_code(
+					array(
+						'account_number'	=> $account_number,
+						'date_added'		=> $this->_today,
+						'oauth_bridge_id'	=> $bridge_id
+					)
+				),
+				'oauth_bridge_id'	=> $bridge_id,
+				'client_date_added'	=> $this->_today
+			)
+		);
+	}
+
+	public function validate_username($type, $username, $id = "") {
+		$flag = false;
+
+		$this->load->model('admin/accounts_model', 'accounts');
+		$this->load->model('admin/tms_admin_accounts_model', 'admin_accounts');
+		$this->load->model('admin/merchant_accounts_model', 'merchant_accounts');
+
+		$account_row = $this->accounts->get_datum(
 			'',
 			array(
-				'oauth_client_bridge_id' => $bridge_id
+				'account_username' => $username
 			)
 		)->row();
 
-		if ($client_row != "") {
-			$name = trim("{$client_row->client_fname} {$client_row->client_mname} {$client_row->client_lname}");
-			$email_address = $client_row->client_email_address;
-			$mobile_no = "{$client_row->client_mobile_country_code}{$client_row->client_mobile_no}";
+		if ($account_row != "") {
+			$acc_id = $account_row->account_number;
 
-			return array(
-				'name' 			=> $name,
-				'email_address' => $email_address,
-				'mobile_no' 	=> $mobile_no,
-			);
+			if ($type == "admin" && $id != "") {
+				if ($acc_id == $id) {
+					$flag = false;
+				} else {
+					$flag = true;
+					goto end;
+				}
+			} else {
+				$flag = true;
+				goto end;
+			}
 		}
 
-		// default return
-		return false;
+		$tms_admin_account_row = $this->admin_accounts->get_datum(
+			'',
+			array(
+				'account_username' => $username
+			)
+		)->row();
+
+		if ($tms_admin_account_row != "") {
+			$acc_id = $tms_admin_account_row->account_number;
+
+			if ($type == "tms_admin" && $id != "") {
+				if ($acc_id == $id) {
+					$flag = false;
+				} else {
+					$flag = true;
+					goto end;
+				}
+			} else {
+				$flag = true;
+				goto end;
+			}
+		}
+
+		$merchant_account_row = $this->merchant_accounts->get_datum(
+			'',
+			array(
+				'account_username' => $username
+			)
+		)->row();
+
+		if ($merchant_account_row != "") {
+			$acc_id = $merchant_account_row->account_number;
+
+			if ($type == "merchant" && $id != "") {
+				if ($acc_id == $id) {
+					$flag = false;
+				} else {
+					$flag = true;
+					goto end;
+				}
+			} else {
+				$flag = true;
+				goto end;
+			}
+		}
+
+		end:
+
+		return $flag;
+	}
+
+	public function validate_login() {
+		$login_url = base_url() . "login";
+
+        $controller = strtolower(get_controller());
+		if(empty($this->session->userdata("{$this->_base_session}")) && $controller != 'login' ) {
+            $this->session->unset_userdata("{$this->_base_session}");
+			$this->session->sess_destroy();
+            redirect($login_url);
+        } else if(!empty($this->session->userdata("{$this->_base_session}"))) {
+			$member_session = $this->session->userdata("{$this->_base_session}");
+		}
+	}
+
+	// private function set_user_data() {
+	// 	$this->_user_data = $this->get_user();
+	// 	is_null($this->_user_data) ? redirect(base_url() . "logout") : "";
+	// }
+
+	public function get_transaction_info($data) {
+		$results = array();
+		
+		foreach ($data as $key => $datum) {
+			// $wallet_address	= $datum['transaction_requested_by']; 
+			// $wallet_data 	= $this->get_wallet_data($wallet_address);
+
+			$transaction_number = $datum["transaction_number"];
+			$image_url =  base_url() . "transactions/qr-code/" . $transaction_number;
+			$qr_code_image = "<img src='{$image_url}' class='img-thumbnail'>";
+
+			$new_datum = array(
+				"id" => $datum["id"],
+				'QR Code' => $qr_code_image, 
+				"Transaction Status" => $datum["transaction_status"],
+				"Transaction Number" => $transaction_number,
+				// "Requested by" => $request_info,
+				"Amount" => $datum["amount"],
+				"Fees" => $datum["fees"],
+				"Transaction Date" => $datum["transaction_date_created"],
+				"Approved Date" => $datum["transaction_date_approved"],
+				"Expiration Date" => $datum["transaction_date_expiration"],
+			);
+
+			$results[] = $new_datum;
+		}
+
+		return $results;
 	}
 
 	public function generate_image_gallery($images_data) {
@@ -249,64 +701,6 @@ HTML;
 		return file_get_contents($image_source);
 	}
 
-	private function set_user_data() {
-		$this->_user_data = $this->get_user();
-		is_null($this->_user_data) ? redirect(base_url() . "logout") : "";
-	}
-
-	public function get_user() {
-		$this->load->model('admin/merchants_model', 'merchants');
-		$this->load->model('admin/wallets_model', 'wallets');
-
-		$session = $this->session->userdata("{$this->_base_session}");
-		if (empty($session)) {
-			redirect(base_url() . "logout");
-		}
-
-		$merchant_id = isset($session['merchant_id']) ? $session['merchant_id'] : "";
-		$datum_merchant = $this->merchants->get_datum(
-			'',
-			array(
-				'merchant_id' => $merchant_id
-			)
-		)->row();
-
-		if ($datum_merchant == "") {
-			redirect(base_url() . "logout");
-		}
-
-		$bridge_id = $datum_merchant->oauth_client_bridge_id;
-
-		$datum_wallet = $this->wallets->get_datum(
-			'',
-			array(
-				'oauth_client_bridge_id' => $bridge_id
-			)
-		)->row();
-
-		if ($datum_wallet == "") {
-			redirect(base_url() . "logout");
-		}
-
-		return array(
-			'merchant_row' => $datum_merchant,
-			'wallet_row' => $datum_wallet
-		);
-	}
-
-	public function validate_login() {
-		$login_url = base_url() . "login";
-
-        $controller = strtolower(get_controller());
-		if(empty($this->session->userdata("{$this->_base_session}")) && $controller != 'login' ) {
-            $this->session->unset_userdata("{$this->_base_session}");
-			$this->session->sess_destroy();
-            redirect($login_url);
-        } else if(!empty($this->session->userdata("{$this->_base_session}"))) {
-			$member_session = $this->session->userdata("{$this->_base_session}");
-		}
-	}
-
 	/**
 	 * Generate Menu UI
 	 *
@@ -332,47 +726,13 @@ HTML;
 		);
 
 		$menu_items[] = array(
-			'menu_id'			=> 'transactions',
-			'menu_title'		=> 'Transactions',
-			// 'menu_url'			=> 	base_url() . "transactions",
-			'menu_controller'	=> 'transactions',
+			'menu_id'			=> 'ledger',
+			'menu_title'		=> 'Ledger',
+			'menu_url'			=> 	base_url() . "ledger",
+			'menu_controller'	=> 'ledger',
 			'menu_icon'			=> 'view-dashboard',
-			'menu_sub_items'	=> array(
-				array(
-					'menu_title'		=> 'Cash In',
-					'menu_url'			=> 	base_url() . "transactions/cash-in",
-					'menu_controller'	=> 'transactions',
-				),
-				array(
-					'menu_title'		=> 'Cash Out',
-					'menu_url'			=> 	base_url() . "transactions/cash-out",
-					'menu_controller'	=> 'transactions',
-				)
-			)
 		);
 
-		$menu_items[] = array(
-			'menu_id'			=> 'marketplace',
-			'menu_title'		=> 'MarketPlace',
-			// 'menu_url'			=> 	base_url() . "transactions",
-			'menu_controller'	=> 'marketplace',
-			'menu_icon'			=> 'view-dashboard',
-			'menu_sub_items'	=> array(
-				array(
-					'menu_title'		=> 'Products',
-					'menu_url'			=> 	base_url() . "marketplace/products",
-					'menu_controller'	=> 'transactions',
-				)
-			)
-		);
-
-		// $menu_items[] = array(
-		// 	'menu_id'			=> 'profile',
-		// 	'menu_title'		=> 'Profile',
-		// 	'menu_url'			=> 	base_url() . "profile",
-		// 	'menu_controller'	=> 'profile',
-		// 	'menu_icon'			=> 'view-dashboard',
-		// );
 
 		$this->_data['nav_sidebar_menu'] = $this->generate_sidebar_items($menu_items);
 	}

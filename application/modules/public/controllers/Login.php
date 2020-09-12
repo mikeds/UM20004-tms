@@ -5,7 +5,7 @@ class Login extends Public_Controller {
 
 	public function after_init(){
 		$this->set_scripts_and_styles();
-		$this->load->model('admin/merchants_model', 'merchants');
+		$this->load->model('admin/merchant_accounts_model', 'merchant_accounts');
 	}
 
 	public function index() {
@@ -18,41 +18,37 @@ class Login extends Public_Controller {
 				$password = $this->input->post("password");
 				$password = hash("sha256", $password);
 
-				$row_mobile = $this->merchants->get_datum(
+				$inner_joints = array(
+					array(
+						'table_name' 	=> 'oauth_bridges',
+						'condition'		=> 'oauth_bridges.oauth_bridge_id = merchant_accounts.oauth_bridge_id'
+					)
+				);
+
+				$row = $this->merchant_accounts->get_datum(
 					'',
 					array(
-						'CONCAT(merchant_mobile_country_code, merchant_mobile_no) ='	=> $username,
-						'merchant_password'											=> $password,
-						'merchant_status'												=> 1
-					)
+						'account_username'	=> $username,
+						'account_password'	=> $password,
+						'account_status' 	=> 1
+					),
+					array(),
+					$inner_joints
 				)->row();
-
-				$row_email = $this->merchants->get_datum(
-					'',
-					array(
-						'merchant_email_address'	=> $username,
-						'merchant_password'		=> $password,
-						'merchant_status'			=> 1
-					)
-				)->row();
-
-				if ($row_mobile == "" && $row_email == "") {
+				
+				if ($row == "") {
 					// Invalid username or password
 					$this->session->set_flashdata('notification', $this->generate_notification('danger', 'The username or password is/are incorrect!'));
 					redirect($this->_data['form_url']);
 				}
 
-				$row = $row_email != "" ? $row_email : $row_mobile;
-
 				$session[$this->_base_session] = array(
-					'merchant_id'					=> $row->merchant_id,
-					'merchant_fname'				=> $row->merchant_fname,
-					'merchant_mname'				=> $row->merchant_mname,
-					'merchant_lname'				=> $row->merchant_lname,
-					'merchant_ext_name'				=> $row->merchant_ext_name,
-					'merchant_mobile_country_code'	=> $row->merchant_mobile_country_code,
-					'merchant_mobile_no'			=> $row->merchant_mobile_no,
-					'member_avatar'					=> $this->generate_avatar($row->merchant_avatar_base64)
+					'id'			=> $row->account_number,
+					'username'		=> $row->account_username,
+					'fname'			=> $row->account_fname,
+					'mname'			=> $row->account_mname,
+					'lname'			=> $row->account_lname,
+					'avatar_base64'	=> $this->generate_avatar($row->account_avatar_base64)
 				);
 
 				$this->session->set_userdata($session);

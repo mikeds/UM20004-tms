@@ -1,18 +1,5 @@
 <?php
-// header("Expires: Thu, 19 Nov 1981 08:52:00 GMT");
-// header("Cache-Control: no-store, no-cache, must-revalidate");
-
-// ini_set('post_max_size',  -1);
-// ini_set('upload_max_filesize', -1);
-// ini_set('memory_limit', '-1');
-
-// header('Last-Modified:'.gmdate('D, d M Y H:i:s').'GMT');
-// header('Cache-Control: no-store, no-cache, must-revalidate');
-// header('Cache-Control: post-check=0, pre-check=0',false);
-// header('Pragma: no-cache');
-// header('Access-Control-Allow-Origin: *');
-// header('Access-Control-Allow-Headers: Origin, X-Requested-Width, Content-Type, Accept');
-// header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT');
+include 'config.php';
 
 /**
  * CodeIgniter
@@ -69,52 +56,6 @@
  * NOTE: If you change these, also change the error_reporting() code below
  */
 
-# CONSTANT SIZE
-define('KB', 1024);
-define('MB', 1048576);
-define('GB', 1073741824);
-define('TB', 1099511627776);
-
-# ENVIRONMENT VAR
-define('APPNAME', getenv("APPNAME"));
-
-define('LOCAL_URL', 'tms.bambupay.local');
-define('DEV_URL', 'dev-tms.resolveitthrough.us');
-define('STAG_URL', 'staging-tms.resolveitthrough.us');
-define('PROD_URL', 'tms.resolveitthrough.us');
-
-$localhost_url = LOCAL_URL;
-$environment_state = (preg_match("/\b{$localhost_url}\b/", $_SERVER['HTTP_HOST']) ? 'local' : 'production');
-
-$development_url = DEV_URL;
-$environment_state = (preg_match("/\b{$development_url}\b/", $_SERVER['HTTP_HOST']) ? 'development' : $environment_state);
-
-$staging_url = STAG_URL;
-$environment_state = (preg_match("/\b{$staging_url}\b/", $_SERVER['HTTP_HOST']) ? 'staging' : $environment_state);
-
-define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : $environment_state);
-
-# DATABASE GLOBAL VARIABLE
-$database = ENVIRONMENT == "production" ? getenv("DBPROD") : 
-(ENVIRONMENT == "staging" ? getenv("DBSTAG") : 
-(ENVIRONMENT == "development" ? getenv("DBDEV") :  getenv("DBLOCAL")
-));
-define('DB_NAME', $database);
-
-$database_username = ENVIRONMENT == "production" ? getenv("DBPRODUSR") : 
-(ENVIRONMENT == "staging" ? getenv("DBSTAGUSR") : 
-(ENVIRONMENT == "development" ? getenv("DBDEVUSR") :  getenv("DBLOCALUSR")
-));
-define('DB_USERNAME', $database_username);
-
-$database_password = ENVIRONMENT == "production" ? getenv("DBPRODPWD") : 
-(ENVIRONMENT == "staging" ? getenv("DBSTAGPWD") : 
-(ENVIRONMENT == "development" ? getenv("DBDEVPWD") :  getenv("DBLOCALPWD")
-));
-define('DB_PWD', $database_password);
-
-$upload_path = ENVIRONMENT == "local" ? getenv("UPLOADPATHLOCAL") : getenv("UPLOADPATHPROD");
-define('UPLOAD_PATH', $upload_path);
 /*
  *---------------------------------------------------------------
  * ERROR REPORTING
@@ -126,6 +67,11 @@ define('UPLOAD_PATH', $upload_path);
 switch (ENVIRONMENT)
 {
 	case 'local':
+		error_reporting(-1);
+		ini_set('display_errors', 1);
+	break;
+
+	case 'test':
 		error_reporting(-1);
 		ini_set('display_errors', 1);
 	break;

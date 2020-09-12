@@ -1,19 +1,14 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Transactions_model extends CI_Model {
+class Tms_admin_accounts_model extends CI_Model {
 	private 
-		$_table	= 'transactions  transactions',
-		$_table_x	= 'transactions';
+		$_table	= 'tms_admin_accounts  admin_accounts',
+		$_table_x	= 'tms_admin_accounts';
 
 	private
-		$_id = "transaction_id";
+		$_id = "account_number";
 
-	function get_datum($id = '', $data = array(), $where_or = array(), $inner_joints = array(), $select = array()) {
-
-		if (!empty($select)) {
-			$this->db->select(ARRtoSTR($select), false);
-		}
-
+	function get_datum($id = '', $data = array(), $where_or = array(), $inner_joints = array()) {
 		$this->db->from($this->_table);
 		if (!empty($inner_joints)) {
 			foreach($inner_joints as $join) {
@@ -168,3 +163,4 @@ class Transactions_model extends CI_Model {
 	}
 	*/
 }
+

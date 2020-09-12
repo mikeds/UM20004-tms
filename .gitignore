@@ -3,3 +3,5 @@
 
 # Ignore local htaccess
 /.htaccess
+
+/config.php
