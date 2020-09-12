@@ -1,19 +1,14 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Transactions_model extends CI_Model {
+class Countries_model extends CI_Model {
 	private 
-		$_table	= 'transactions  transactions',
-		$_table_x	= 'transactions';
+		$_table	= 'countries  countries',
+		$_table_x	= 'countries';
 
 	private
-		$_id = "transaction_id";
+		$_id = "country_id";
 
-	function get_datum($id = '', $data = array(), $where_or = array(), $inner_joints = array(), $select = array()) {
-
-		if (!empty($select)) {
-			$this->db->select(ARRtoSTR($select), false);
-		}
-
+	function get_datum($id = '', $data = array(), $where_or = array(), $inner_joints = array()) {
 		$this->db->from($this->_table);
 		if (!empty($inner_joints)) {
 			foreach($inner_joints as $join) {
@@ -168,3 +163,5 @@ class Transactions_model extends CI_Model {
 	}
 	*/
 }
+
+	

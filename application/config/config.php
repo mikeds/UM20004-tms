@@ -378,7 +378,7 @@ $config['encryption_key'] = '';
 |
 */
 $config['sess_driver'] = 'files';
-$config['sess_cookie_name'] = 'healthsol_io';
+$config['sess_cookie_name'] = getenv("SESSNNAME");
 $config['sess_expiration'] = 3600; // set to 1hr
 $config['sess_save_path'] = NULL;
 $config['sess_match_ip'] = FALSE;
