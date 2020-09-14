@@ -7,3 +7,22 @@ table img {
     height: auto !important;
     border-radius: 0.25rem !important;
 }
+
+#portal-title {
+    display: block;
+    margin: 0 auto;
+    margin-left: 20px;
+}
+
+@media screen and (min-width: 992px) {
+    #logo {
+        height: 40px;
+        width: 200px;
+        background: url("../../images/bp_logo.png") center center no-repeat;
+        background-size: contain;
+    }
+
+    #portal-title {
+        display: none;
+    }
+}

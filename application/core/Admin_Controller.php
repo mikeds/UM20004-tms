@@ -512,6 +512,8 @@ class Admin_Controller extends Global_Controller {
         } else if(!empty($this->session->userdata("{$this->_base_session}"))) {
 			$member_session = $this->session->userdata("{$this->_base_session}");
 		}
+
+		$this->_data['profile_name'] = trim("{$member_session['fname']} {$member_session['mname']} {$member_session['lname']}");
 	}
 
 	// private function set_user_data() {
