@@ -57,6 +57,10 @@ $route["ledger"]    = "admin/Ledger";
 $route["login"]     = "public/Login";
 $route["logout"]    = "public/Logout";
 
+$route["data-privacy-statement"]    = "public/Data_privacy_statement";
+$route["eula"]                      = "public/Eula";
+$route["terms-and-conditions"]      = "public/Terms_and_conditions";
+
 $route['404_override'] = 'public/Error_404';
 $route['translate_uri_dashes'] = FALSE;
 
