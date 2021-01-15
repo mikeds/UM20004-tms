@@ -57,7 +57,7 @@ $route["ledger"]    = "admin/Ledger";
 $route["login"]     = "public/Login";
 $route["logout"]    = "public/Logout";
 
-$route["data-privacy-statement"]    = "public/Data_privacy_statement";
+$route["data-privacy"]              = "public/Data_privacy_statement";
 $route["eula"]                      = "public/Eula";
 $route["terms-and-conditions"]      = "public/Terms_and_conditions";
 
